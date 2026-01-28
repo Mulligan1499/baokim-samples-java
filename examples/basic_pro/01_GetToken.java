@@ -1,5 +1,5 @@
 /**
- * Ví dụ 1: Lấy Access Token
+ * Ví dụ 1: Lấy Access Token 
  * 
  * Compile: javac -cp .:../target/b2b-example-1.0.0.jar GetToken.java
  * Run: java -cp .:../target/b2b-example-1.0.0.jar GetToken
