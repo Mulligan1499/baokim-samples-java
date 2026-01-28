@@ -1,0 +1,2 @@
+run = "mvn -q exec:java -Dexec.mainClass=vn.baokim.b2b.TestFullFlow"
+entrypoint = "src/main/java/vn/baokim/b2b/TestFullFlow.java"

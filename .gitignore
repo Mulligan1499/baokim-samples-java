@@ -1,0 +1,24 @@
+# Java build
+target/
+*.class
+*.jar
+*.log
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# Config thực
+src/main/resources/config.local.properties
+
+# Keys
+keys/merchant_private.pem
+keys/baokim_public.pem
+
+# Logs
+logs/*.log
+
+# OS
+.DS_Store
+Thumbs.db
