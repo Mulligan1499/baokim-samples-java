@@ -1,24 +1,30 @@
-# Java build
-target/
-*.class
-*.jar
-*.log
+/vendor/
+node_modules/
+npm-debug.log
+yarn-error.log
 
-# IDE
-.idea/
-*.iml
-.vscode/
+# Laravel 4 specific
+bootstrap/compiled.php
+app/storage/
 
-# Config thực
-src/main/resources/config.local.properties
+# Laravel 5 & Lumen specific
+public/storage
+public/hot
 
-# Keys
-keys/merchant_private.pem
-keys/baokim_public.pem
+# Laravel 5 & Lumen specific with changed public path
+public_html/storage
+public_html/hot
 
-# Logs
-logs/*.log
+storage/*.key
+.env
+Homestead.yaml
+Homestead.json
+/.vagrant
+.phpunit.result.cache
 
-# OS
-.DS_Store
-Thumbs.db
+/public/build
+/storage/pail
+.env.backup
+.env.production
+.phpactor.json
+auth.json
