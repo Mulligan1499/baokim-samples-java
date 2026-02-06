@@ -16,11 +16,35 @@ public class BaokimAuth {
     private String token;
     private long tokenExpiresAt;
     
+    // Cho phép override credentials cho Direct connection
+    private String merchantCode;
+    private String clientId;
+    private String clientSecret;
+    
     public BaokimAuth() {
+        this(null, null, null);
+    }
+    
+    public BaokimAuth(String merchantCode, String clientId, String clientSecret) {
         this.httpClient = new HttpClient();
         this.gson = new Gson();
         this.token = null;
         this.tokenExpiresAt = 0;
+        
+        // Use provided credentials or defaults from config
+        this.merchantCode = merchantCode != null ? merchantCode : Config.get("master_merchant_code");
+        this.clientId = clientId != null ? clientId : Config.get("client_id");
+        this.clientSecret = clientSecret != null ? clientSecret : Config.get("client_secret");
+    }
+    
+    /**
+     * Factory method cho Direct connection
+     */
+    public static BaokimAuth forDirectConnection() {
+        String directMerchantCode = Config.get("direct_merchant_code", Config.get("merchant_code"));
+        String directClientId = Config.get("direct_client_id", Config.get("client_id"));
+        String directClientSecret = Config.get("direct_client_secret", Config.get("client_secret"));
+        return new BaokimAuth(directMerchantCode, directClientId, directClientSecret);
     }
     
     /**
@@ -38,9 +62,9 @@ public class BaokimAuth {
         
         // Build request
         Map<String, Object> requestBody = new HashMap<String, Object>();
-        requestBody.put("merchant_code", Config.get("master_merchant_code"));
-        requestBody.put("client_id", Config.get("client_id"));
-        requestBody.put("client_secret", Config.get("client_secret"));
+        requestBody.put("merchant_code", merchantCode);
+        requestBody.put("client_id", clientId);
+        requestBody.put("client_secret", clientSecret);
         
         String jsonBody = gson.toJson(requestBody);
         String signature = SignatureHelper.sign(jsonBody);
@@ -92,3 +116,4 @@ public class BaokimAuth {
         return "Bearer " + getToken();
     }
 }
+

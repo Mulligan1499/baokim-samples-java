@@ -1,9 +1,11 @@
-package vn.baokim.b2b;
+package vn.baokim.b2b.hosttohost;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import vn.baokim.b2b.*;
+import vn.baokim.b2b.mastersub.BaokimOrder;
 
 /**
  * BaokimVA - API Virtual Account (Host to Host)
@@ -50,7 +52,7 @@ public class BaokimVA {
     /**
      * Tạo Static VA
      */
-    public BaokimOrder.ApiResponse createStaticVA(String accName, String mrcOrderId, String description) throws Exception {
+    public BaokimOrder.ApiResponse createStaticVA(String accName, String mrcOrderId, String expireDate, int collectAmountMin, int collectAmountMax) throws Exception {
         Map<String, Object> requestBody = new LinkedHashMap<String, Object>();
         requestBody.put("request_id", generateRequestId("VA"));
         requestBody.put("request_time", formatDateTime());
@@ -59,9 +61,9 @@ public class BaokimVA {
         requestBody.put("acc_name", accName);
         requestBody.put("acc_type", VA_TYPE_STATIC);
         requestBody.put("mrc_order_id", mrcOrderId);
-        if (description != null && !description.isEmpty()) {
-            requestBody.put("description", description);
-        }
+        requestBody.put("expire_date", expireDate);
+        requestBody.put("collect_amount_min", collectAmountMin);
+        requestBody.put("collect_amount_max", collectAmountMax);
         
         return sendRequest(ENDPOINT_CREATE_VA, requestBody);
     }
