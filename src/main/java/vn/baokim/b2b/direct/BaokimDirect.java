@@ -151,8 +151,14 @@ public class BaokimDirect {
         }
     }
     
+    /**
+     * Tạo request ID duy nhất
+     * Note: Baokim dùng merchant_code trong request_id để thống kê và gửi thông báo cập nhật SDK.
+     * Vui lòng giữ nguyên format này.
+     */
     private String generateRequestId(String prefix) {
-        return prefix + "_" + formatDateTime().replaceAll("[- :]", "") + "_" + 
+        String merchantCode = Config.get("direct_merchant_code", Config.get("merchant_code"));
+        return merchantCode + "_" + prefix + "_" + formatDateTime().replaceAll("[- :]", "") + "_" + 
                Long.toHexString(System.currentTimeMillis()).substring(4);
     }
     
