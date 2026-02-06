@@ -27,7 +27,7 @@ public class GetToken {
             System.out.println("=== Thông tin Token ===");
             System.out.println("Access Token: " + token.substring(0, 50) + "...\n");
             
-            System.out.println("=== HOÀN THÀNH ===");
+            System.out.println("=== HOÀN THÀNH ==="); 
             
         } catch (Exception e) {
             System.err.println("\n!!! LỖI !!!");
