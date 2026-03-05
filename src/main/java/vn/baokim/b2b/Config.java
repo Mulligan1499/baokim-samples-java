@@ -22,24 +22,19 @@ public class Config {
         basePath = path;
         properties = new Properties();
         
-        // Try config.local.properties first
-        String localPath = path + "src/main/resources/config.local.properties";
-        String defaultPath = path + "src/main/resources/config.properties";
+        // Load config.properties (trong src/main/resources/config/)
+        String defaultPath = path + "src/main/resources/config/config.properties";
         
         InputStream is = null;
         try {
-            is = new FileInputStream(localPath);
+            is = new FileInputStream(defaultPath);
         } catch (Exception e) {
-            try {
-                is = new FileInputStream(defaultPath);
-            } catch (Exception e2) {
-                // Try from classpath
-                is = Config.class.getClassLoader().getResourceAsStream("config.properties");
-            }
+            // Try from classpath
+            is = Config.class.getClassLoader().getResourceAsStream("config/config.properties");
         }
         
         if (is == null) {
-            throw new Exception("Config file not found");
+            throw new Exception("Config file not found: " + defaultPath);
         }
         
         properties.load(is);

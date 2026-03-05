@@ -1,172 +1,219 @@
-# Baokim B2B API - Java 8+ Example 
+# Baokim B2B API - Java 8+ SDK
 
-Bộ source code mẫu tích hợp Baokim B2B API, viết bằng Java 8+ với Maven.
+Bộ SDK tích hợp Baokim B2B API, viết bằng Java 8+ với Maven.
 
 ## 🔧 Yêu cầu
 - Java 8+
 - Maven 3.x
 
-## 📦 Cài đặt
+---
+
+## 📦 Tích hợp vào project của bạn
+
+### Bước 1: Clone SDK
 
 ```bash
-git clone https://github.com/Mulligan1499/baokim-b2b-java-example.git
-cd baokim-b2b-java-example
-cp src/main/resources/config.properties src/main/resources/config.local.properties
-mvn clean compile
+git clone https://github.com/ITBaoKim/baokim-samples-java.git
 ```
 
-Chỉnh sửa `src/main/resources/config.local.properties` với thông tin Baokim cung cấp:
-- `client_id`, `client_secret` - Thông tin OAuth2
-- `merchant_code`, `master_merchant_code`, `sub_merchant_code`
-- `direct_client_id`, `direct_client_secret`, `direct_merchant_code` - Cho Direct connection
-- Đặt file `merchant_private.pem` vào thư mục `keys/`
-
-## 🚀 Quick Start
+### Bước 2: Copy thư mục `src/` vào project
 
 ```bash
-# Build project
+cp -r baokim-samples-java/src /path/to/your-project/baokim-sdk
+```
+
+Thư mục `src/` đã bao gồm sẵn config và keys, bạn chỉ cần copy 1 folder duy nhất:
+
+```
+your-project/
+├── baokim-sdk/                        # Chỉ cần copy folder src/ này
+│   └── main/
+│       ├── java/vn/baokim/b2b/        # Java source code
+│       │   ├── BaokimAuth.java
+│       │   ├── Config.java
+│       │   ├── HttpClient.java
+│       │   ├── mastersub/
+│       │   │   └── BaokimOrder.java
+│       │   ├── hosttohost/
+│       │   │   └── BaokimVA.java
+│       │   └── direct/
+│       │       └── BaokimDirect.java
+│       └── resources/
+│           ├── config/                # ← Config nằm sẵn trong SDK
+│           │   └── config.properties  # File cấu hình (điền thông tin ở bước 3)
+│           └── keys/                  # ← Keys nằm sẵn trong SDK
+│               ├── merchant_private.pem
+│               └── baokim_public.pem
+├── pom.xml
+├── logs/
+└── YourApp.java
+```
+
+### Bước 3: Cấu hình
+
+Mở file `baokim-sdk/main/resources/config/config.properties` và điền thông tin Baokim cung cấp:
+```properties
+base_url=https://devtest.baokim.vn
+timeout=30000
+
+merchant_code=YOUR_MERCHANT_CODE
+client_id=YOUR_CLIENT_ID
+client_secret=YOUR_CLIENT_SECRET
+
+master_merchant_code=YOUR_MASTER_MERCHANT_CODE
+sub_merchant_code=YOUR_SUB_MERCHANT_CODE
+
+# RSA Key paths (tương đối từ thư mục gốc project)
+merchant_private_key_path=src/main/resources/keys/merchant_private.pem
+baokim_public_key_path=src/main/resources/keys/baokim_public.pem
+
+url_success=https://your-domain.com/payment/success
+url_fail=https://your-domain.com/payment/fail
+webhook_url=https://your-domain.com/webhook/baokim
+```
+
+### Bước 4: Đặt RSA Keys
+
+Đặt file Private Key (Baokim cung cấp) vào `baokim-sdk/main/resources/keys/`:
+```bash
+# Copy merchant_private.pem vào baokim-sdk/main/resources/keys/
+```
+
+### Bước 5: Build project
+
+```bash
 mvn clean compile
-
-# Test tất cả APIs
-mvn exec:java -Dexec.mainClass="vn.baokim.b2b.TestFullFlow"
-
-# Test từng loại connection
-mvn exec:java -Dexec.mainClass="vn.baokim.b2b.TestFullFlow" -Dexec.args="basic_pro"
-mvn exec:java -Dexec.mainClass="vn.baokim.b2b.TestFullFlow" -Dexec.args="host_to_host"
-mvn exec:java -Dexec.mainClass="vn.baokim.b2b.TestFullFlow" -Dexec.args="direct"
 ```
 
 ---
 
-## 📖 Hướng dẫn sử dụng
+## 🚀 Sử dụng SDK
 
-### Bước 1: Import và load config
+### Khởi tạo (bắt buộc ở đầu mỗi file)
+
 ```java
 import vn.baokim.b2b.*;
-import vn.baokim.b2b.mastersub.BaokimOrder;
-import vn.baokim.b2b.hosttohost.BaokimVA;
-import vn.baokim.b2b.direct.BaokimDirect;
 
 // Load config
 Config.load();
-```
 
-### Bước 2: Khởi tạo Authentication
-```java
-// Lấy token (tự động cache, không cần gọi lại)
+// Khởi tạo Auth
 BaokimAuth auth = new BaokimAuth();
-String token = auth.getToken();
 ```
 
 ---
 
-## 🔷 Basic/Pro - Thanh toán qua Master/Sub Merchant
+## 🔷 API 1: Lấy Access Token
 
-**Class:** `BaokimOrder` (trong `vn.baokim.b2b.mastersub`)
-
-### Tạo đơn hàng
 ```java
+import vn.baokim.b2b.*;
+
+Config.load();
+
+BaokimAuth auth = new BaokimAuth();
+String token = auth.getToken();
+
+System.out.println("Token: " + token.substring(0, 50) + "...");
+```
+
+```bash
+mvn exec:java -Dexec.mainClass="vn.baokim.b2b.examples.GetToken"
+```
+
+---
+
+## 🔷 API 2: Tạo đơn hàng (Basic Pro - Master/Sub)
+
+```java
+import vn.baokim.b2b.*;
+import vn.baokim.b2b.mastersub.BaokimOrder;
+
+Config.load();
+
+BaokimAuth auth = new BaokimAuth();
 BaokimOrder orderService = new BaokimOrder(auth);
 
 Map<String, Object> orderData = new HashMap<>();
-orderData.put("mrcOrderId", "ORDER_" + System.currentTimeMillis());   // Mã đơn hàng (bắt buộc)
-orderData.put("totalAmount", 100000);                                  // Số tiền (bắt buộc)
-orderData.put("description", "Thanh toán đơn hàng");                   // Mô tả (bắt buộc)
-orderData.put("paymentMethod", 1);                                     // 1=VA, 6=VNPay QR
+orderData.put("mrcOrderId", "ORDER_" + System.currentTimeMillis());
+orderData.put("totalAmount", 100000);
+orderData.put("description", "Thanh toan don hang");
 orderData.put("customerInfo", BaokimOrder.buildCustomerInfo(
-    "NGUYEN VAN A", "email@example.com", "0901234567", "123 Street"
+    "NGUYEN VAN A", "test@email.com", "0901234567", "123 Street"
 ));
 
 BaokimOrder.ApiResponse result = orderService.createOrder(orderData);
 
+System.out.println("Success: " + result.success);
 if (result.success) {
-    String paymentUrl = result.data.get("redirect_url").getAsString();
-    System.out.println("Chuyển khách hàng đến: " + paymentUrl);
+    System.out.println("Payment URL: " + result.data.get("redirect_url").getAsString());
 }
-```
-
-### Tra cứu đơn hàng
-```java
-BaokimOrder.ApiResponse result = orderService.queryOrder("ORDER_123456");
-```
-
-### Hoàn tiền
-```java
-BaokimOrder.ApiResponse result = orderService.refundOrder("ORDER_123456", 50000, "Hoàn tiền cho khách");
-```
-
-### Thu hộ tự động (Auto Debit)
-```java
-Map<String, Object> autoDebitData = new HashMap<>();
-autoDebitData.put("mrcOrderId", "AD_" + System.currentTimeMillis());
-autoDebitData.put("totalAmount", 0);
-autoDebitData.put("description", "Thu hộ tự động");
-autoDebitData.put("paymentMethod", BaokimOrder.PAYMENT_METHOD_AUTO_DEBIT);
-autoDebitData.put("serviceCode", "QL_THU_HO_1");
-autoDebitData.put("customerInfo", BaokimOrder.buildCustomerInfo(...));
-
-BaokimOrder.ApiResponse result = orderService.createOrder(autoDebitData);
 ```
 
 ---
 
-## 🔷 Host-to-Host - Virtual Account (VA)
+## 🔷 API 3: Tra cứu đơn hàng
 
-**Class:** `BaokimVA` (trong `vn.baokim.b2b.hosttohost`)
-
-### Tạo VA động (mỗi đơn hàng 1 VA riêng)
 ```java
+BaokimOrder.ApiResponse result = orderService.queryOrder("ORDER_123456");
+System.out.println("Success: " + result.success);
+```
+
+---
+
+## 🔷 API 4: Hoàn tiền (Refund)
+
+```java
+BaokimOrder.ApiResponse result = orderService.refundOrder("ORDER_123456", 50000, "Hoan tien cho khach");
+System.out.println("Success: " + result.success);
+```
+
+---
+
+## 🔷 API 5: Tạo Virtual Account - VA (Host-to-Host)
+
+```java
+import vn.baokim.b2b.hosttohost.BaokimVA;
+
 BaokimVA vaService = new BaokimVA(auth);
 
 BaokimOrder.ApiResponse result = vaService.createDynamicVA(
-    "NGUYEN VAN A",           // Tên khách hàng
-    "ORDER_123",              // Mã đơn hàng
-    100000,                   // Số tiền cần thu
-    ""                        // Mô tả (để rỗng nếu không có)
+    "NGUYEN VAN A",    // Tên khách hàng
+    "ORDER_123",       // Mã đơn hàng
+    100000,            // Số tiền
+    ""                 // Mô tả
 );
 
+System.out.println("Success: " + result.success);
 if (result.success) {
     System.out.println("Số VA: " + result.data.get("acc_no").getAsString());
-    System.out.println("Ngân hàng: " + result.data.get("bank_name").getAsString());
 }
-```
-
-### Tạo VA tĩnh (1 VA dùng nhiều lần)
-```java
-BaokimOrder.ApiResponse result = vaService.createStaticVA(
-    "TRAN VAN B",                    // Tên khách hàng
-    "CUSTOMER_001",                  // Mã định danh khách
-    "2026-12-31 23:59:59",           // Ngày hết hạn
-    10000,                           // Số tiền tối thiểu
-    10000000                         // Số tiền tối đa
-);
-```
-
-### Tra cứu giao dịch VA
-```java
-BaokimOrder.ApiResponse result = vaService.queryTransaction("00812345678901");
 ```
 
 ---
 
-## 🔷 Direct Connection - Không qua Master Merchant
+## 🔷 API 6: Tra cứu giao dịch VA
 
-**Class:** `BaokimDirect` (trong `vn.baokim.b2b.direct`)
-
-> ⚠️ Direct connection cần credentials riêng, cấu hình trong `direct_client_id`, `direct_client_secret`
-
-### Khởi tạo với Direct credentials
 ```java
-BaokimAuth directAuth = BaokimAuth.forDirectConnection();
-BaokimDirect directService = new BaokimDirect(directAuth);
+BaokimOrder.ApiResponse result = vaService.queryTransaction("00812345678901");
+System.out.println("Success: " + result.success);
 ```
 
-### Tạo đơn hàng Direct
+---
+
+## 🔷 API 7: Tạo đơn hàng Direct Connection
+
+> ⚠️ Direct connection sử dụng credentials riêng (`direct_client_id`, `direct_client_secret`). Thêm vào config nếu có.
+
 ```java
+import vn.baokim.b2b.direct.BaokimDirect;
+
+BaokimAuth directAuth = BaokimAuth.forDirectConnection();
+BaokimDirect directService = new BaokimDirect(directAuth);
+
 Map<String, Object> orderData = new HashMap<>();
 orderData.put("mrc_order_id", "DRT_" + System.currentTimeMillis());
 orderData.put("total_amount", 150000);
-orderData.put("description", "Thanh toán Direct");
+orderData.put("description", "Thanh toan Direct");
 
 Map<String, Object> customerInfo = new HashMap<>();
 customerInfo.put("name", "NGUYEN VAN A");
@@ -177,52 +224,94 @@ customerInfo.put("gender", 1);
 orderData.put("customer_info", customerInfo);
 
 BaokimOrder.ApiResponse result = directService.createOrder(orderData);
-
-if (result.success) {
-    System.out.println("Payment URL: " + result.data.get("redirect_url").getAsString());
-}
-```
-
-### Tra cứu đơn hàng
-```java
-BaokimOrder.ApiResponse result = directService.queryOrder("DRT_123456");
-```
-
-### Hủy đơn hàng
-```java
-BaokimOrder.ApiResponse result = directService.cancelOrder("DRT_123456", "Lý do hủy");
+System.out.println("Success: " + result.success);
 ```
 
 ---
 
-## 📁 Cấu trúc thư mục
+## 🔷 API 8: Xử lý Webhook từ Baokim (Verify Signature)
 
+Khi có giao dịch thành công (thanh toán, hoàn tiền, VA...), **Baokim sẽ gửi HTTP POST** đến webhook URL của merchant.
+
+### Cấu hình
+
+Đặt file **Baokim Public Key** (do Baokim cung cấp) vào `baokim-sdk/main/resources/keys/baokim_public.pem`.
+
+### Code example (Servlet hoặc Spring Controller)
+
+```java
+import vn.baokim.b2b.*;
+import java.io.BufferedReader;
+
+// Trong method xử lý POST request (ví dụ: Servlet hoặc Spring @PostMapping)
+public void handleWebhook(HttpServletRequest request, HttpServletResponse response) {
+    try {
+        Config.load();
+        
+        // Lấy signature từ header
+        String signature = request.getHeader("Signature");
+        if (signature == null || signature.isEmpty()) {
+            throw new Exception("Signature header not found");
+        }
+
+        // Đọc body
+        StringBuilder body = new StringBuilder();
+        BufferedReader reader = request.getReader();
+        String line;
+        while ((line = reader.readLine()) != null) {
+            body.append(line);
+        }
+
+        // Verify signature bằng Baokim Public Key
+        boolean isValid = SignatureHelper.verify(body.toString(), signature);
+        if (!isValid) {
+            throw new Exception("Invalid signature");
+        }
+
+        System.out.println("✅ Webhook verified! Data: " + body.toString());
+        
+        // TODO: Parse JSON và cập nhật trạng thái đơn hàng trong database
+
+        // Trả về success
+        response.setContentType("application/json");
+        response.getWriter().write("{\"code\": 0, \"message\": \"Success\"}");
+    } catch (Exception e) {
+        System.err.println("❌ Webhook error: " + e.getMessage());
+        response.setContentType("application/json");
+        try {
+            response.getWriter().write("{\"code\": 1, \"message\": \"" + e.getMessage() + "\"}");
+        } catch (Exception ignored) {}
+    }
+}
 ```
-├── pom.xml                           # Maven config
-├── src/main/
-│   ├── java/vn/baokim/b2b/
-│   │   ├── mastersub/                # Basic/Pro APIs
-│   │   │   └── BaokimOrder.java
-│   │   ├── hosttohost/               # VA Host-to-Host APIs
-│   │   │   └── BaokimVA.java
-│   │   ├── direct/                   # Direct Connection APIs
-│   │   │   └── BaokimDirect.java
-│   │   ├── BaokimAuth.java           # Authentication
-│   │   ├── Config.java               # Configuration
-│   │   ├── HttpClient.java           # HTTP client
-│   │   ├── SignatureHelper.java      # RSA signing
-│   │   └── TestFullFlow.java         # Test tất cả APIs
-│   └── resources/
-│       ├── config.properties         # Template
-│       └── config.local.properties   # Config thực (không commit)
-├── examples/                         # Ví dụ từng API
-│   ├── basic_pro/
-│   ├── va_host_to_host/
-│   └── direct/
-├── keys/                             # RSA Keys
-│   └── merchant_private.pem          # Private key của bạn
-└── logs/                             # Log files
+
+### Ví dụ test với file Java thuần (không cần Servlet)
+
+```java
+import vn.baokim.b2b.*;
+
+public class TestWebhookVerify {
+    public static void main(String[] args) throws Exception {
+        Config.load();
+        
+        // Giả lập data và signature nhận từ Baokim
+        String webhookBody = "{\"order\":{\"mrc_order_id\":\"ORDER_123\"}}";
+        String signature = "BASE64_SIGNATURE_FROM_BAOKIM";
+        
+        boolean isValid = SignatureHelper.verify(webhookBody, signature);
+        System.out.println("Signature valid: " + isValid);
+    }
+}
 ```
+
+### Response format
+
+Merchant cần trả về JSON với `code = 0` khi xử lý thành công:
+```json
+{"code": 0, "message": "Success"}
+```
+
+---
 
 ## 📚 API Endpoints
 
@@ -256,6 +345,7 @@ BaokimOrder.ApiResponse result = directService.cancelOrder("DRT_123456", "Lý do
 | `Chữ ký số không hợp lệ` | Private key không đúng | Kiểm tra file `keys/merchant_private.pem` |
 | `Token expired` | Token hết hạn | SDK tự động refresh, không cần xử lý |
 | `Invalid merchant_code` | Sai mã merchant | Kiểm tra config |
+| `Config file not found` | Chưa cấu hình config.properties | Mở file `config.properties` và điền thông tin |
 
 ---
 © 2026 Baokim
