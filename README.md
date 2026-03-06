@@ -49,7 +49,19 @@ your-project/
 └── YourApp.java
 ```
 
-### Bước 3: Cấu hình
+### Bước 3: Thêm dependency vào pom.xml
+
+Nếu project của bạn sử dụng Maven, hãy thêm dependency sau vào file `pom.xml` để SDK có thể thực hiện parse JSON:
+
+```xml
+<dependency>
+    <groupId>com.google.code.gson</groupId>
+    <artifactId>gson</artifactId>
+    <version>2.8.9</version>
+</dependency>
+```
+
+### Bước 4: Cấu hình
 
 Mở file `baokim-sdk/main/resources/config/config.properties` và điền thông tin Baokim cung cấp:
 ```properties
@@ -72,14 +84,14 @@ url_fail=https://your-domain.com/payment/fail
 webhook_url=https://your-domain.com/webhook/baokim
 ```
 
-### Bước 4: Đặt RSA Keys
+### Bước 5: Đặt RSA Keys
 
 Đặt file Private Key (Baokim cung cấp) vào `baokim-sdk/main/resources/keys/`:
 ```bash
 # Copy merchant_private.pem vào baokim-sdk/main/resources/keys/
 ```
 
-### Bước 5: Build project
+### Bước 6: Build project
 
 ```bash
 mvn clean compile
