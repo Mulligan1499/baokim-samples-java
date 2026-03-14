@@ -36,8 +36,10 @@ your-project/
 │       │   │   └── BaokimOrder.java
 │       │   ├── hosttohost/
 │       │   │   └── BaokimVA.java
-│       │   └── direct/
-│       │       └── BaokimDirect.java
+│       │   ├── direct/
+│       │   │   └── BaokimDirect.java
+│       │   └── merchanthosted/
+│       │       └── BaokimMerchantVA.java
 │       └── resources/
 │           ├── config/                # ← Config nằm sẵn trong SDK
 │           │   └── config.properties  # File cấu hình (điền thông tin ở bước 3)
@@ -83,6 +85,12 @@ url_success=https://your-domain.com/payment/success
 url_fail=https://your-domain.com/payment/fail
 webhook_url=https://your-domain.com/webhook/baokim
 ```
+
+> [!IMPORTANT]
+> **Lưu ý lên môi trường Production:**
+> - Thay `base_url` thành `https://openapi.baokim.vn`.
+> - Thay đổi các thông tin `merchant_code`, `client_id`, `client_secret` sang thông tin môi trường Production do Baokim cung cấp.
+> - Cập nhật cặp RSA Keys (Private Key của Merchant và Public Key của Baokim) tương ứng với môi trường Production.
 
 ### Bước 5: Đặt RSA Keys
 
@@ -241,6 +249,86 @@ System.out.println("Success: " + result.success);
 
 ---
 
+## 🔷 API 9: Tạo Virtual Account - VA (Merchant Hosted / Direct)
+
+> ⚠️ Merchant Hosted dùng credentials riêng (`direct_client_id`, `direct_client_secret`).
+> Khác với Host-to-Host (Master/Sub), Merchant Hosted dùng `merchant_code` thay vì `master_merchant_code` + `sub_merchant_code`.
+
+```java
+import vn.baokim.b2b.*;
+import vn.baokim.b2b.merchanthosted.BaokimMerchantVA;
+import vn.baokim.b2b.mastersub.BaokimOrder;
+
+Config.load();
+
+BaokimAuth directAuth = BaokimAuth.forDirectConnection();
+BaokimMerchantVA vaService = new BaokimMerchantVA(directAuth.getToken());
+
+BaokimOrder.ApiResponse result = vaService.createDynamicVA(
+    "NGUYEN VAN A",    // Tên khách hàng
+    "MH_VA_" + System.currentTimeMillis(),  // Mã đơn hàng
+    100000,            // Số tiền
+    ""                 // Ghi chú
+);
+
+System.out.println("Success: " + result.success);
+if (result.success) {
+    System.out.println("Số VA: " + result.data.get("acc_no").getAsString());
+}
+```
+
+### Tạo VA với đầy đủ options
+
+```java
+Map<String, Object> vaData = new LinkedHashMap<>();
+vaData.put("acc_name", "NGUYEN VAN A");
+vaData.put("acc_type", 1);                   // 1=Dynamic, 2=Static
+vaData.put("mrc_order_id", "ORDER_001");
+vaData.put("collect_amount_min", 100000);     // Required khi acc_type=1
+vaData.put("collect_amount_max", 100000);     // Required
+vaData.put("store_code", "STORE_001");       // Optional
+vaData.put("staff_code", "STAFF_001");       // Optional
+vaData.put("bank_code", "BIDV");             // Optional
+vaData.put("memo", "Ghi chú");               // Optional (max 255)
+
+BaokimOrder.ApiResponse result = vaService.createVA(vaData);
+```
+
+---
+
+## 🔷 API 10: Cập nhật VA (Merchant Hosted)
+
+```java
+Map<String, Object> updateData = new HashMap<>();
+updateData.put("acc_name", "NGUYEN VAN B");
+updateData.put("collect_amount_max", 500000);
+updateData.put("expire_date", "2027-06-30 23:59:59");
+
+BaokimOrder.ApiResponse result = vaService.updateVA("ORDER_001", updateData);
+System.out.println("Success: " + result.success);
+```
+
+---
+
+## 🔷 API 11: Tra cứu chi tiết VA (Merchant Hosted)
+
+```java
+// Tra cứu cơ bản
+BaokimOrder.ApiResponse result = vaService.detailVA("00812345678901");
+System.out.println("Success: " + result.success);
+
+// Tra cứu với bộ lọc
+Map<String, Object> queryData = new HashMap<>();
+queryData.put("start_date", "2026-01-01 00:00:00");
+queryData.put("end_date", "2026-12-31 23:59:59");
+queryData.put("current_page", 1);
+queryData.put("per_page", 20);
+
+BaokimOrder.ApiResponse result2 = vaService.detailVA("00812345678901", queryData);
+```
+
+---
+
 ## 🔷 API 8: Xử lý Webhook từ Baokim (Verify Signature)
 
 Khi có giao dịch thành công (thanh toán, hoàn tiền, VA...), **Baokim sẽ gửi HTTP POST** đến webhook URL của merchant.
@@ -340,6 +428,13 @@ Merchant cần trả về JSON với `code = 0` khi xử lý thành công:
 | Tạo VA | `/b2b/core/api/ext/mm/bank-transfer/create` |
 | Cập nhật VA | `/b2b/core/api/ext/mm/bank-transfer/update` |
 | Tra cứu VA | `/b2b/core/api/ext/mm/bank-transfer/detail` |
+
+### VA Merchant Hosted (Direct)
+| API | Endpoint |
+|-----|----------|
+| Tạo VA | `/b2b/core/api/merchant-hosted/bank-transfer/create` |
+| Cập nhật VA | `/b2b/core/api/merchant-hosted/bank-transfer/update` |
+| Tra cứu VA | `/b2b/core/api/merchant-hosted/bank-transfer/detail` |
 
 ### Direct Connection
 | API | Endpoint |
