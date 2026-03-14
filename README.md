@@ -88,7 +88,7 @@ webhook_url=https://your-domain.com/webhook/baokim
 
 > [!IMPORTANT]
 > **Lưu ý lên môi trường Production:**
-> - Thay `base_url` thành `https://openapi.baokim.vn`.
+> - Thay `base_url` thành `https://bws.baokim.vn`.
 > - Thay đổi các thông tin `merchant_code`, `client_id`, `client_secret` sang thông tin môi trường Production do Baokim cung cấp.
 > - Cập nhật cặp RSA Keys (Private Key của Merchant và Public Key của Baokim) tương ứng với môi trường Production.
 
