@@ -5,6 +5,8 @@ import com.google.gson.JsonObject;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import vn.baokim.b2b.*;
+import vn.baokim.b2b.dto.CreateOrderRequest;
+import vn.baokim.b2b.dto.RefundRequest;
 
 /**
  * BaokimOrder - API đơn hàng (Basic Pro)
@@ -31,33 +33,35 @@ public class BaokimOrder {
     
     /**
      * Tạo đơn hàng mới
+     * 
+     * @param request DTO chứa thông tin đơn hàng
      */
-    public ApiResponse createOrder(Map<String, Object> orderData) throws Exception {
+    public ApiResponse createOrder(CreateOrderRequest request) throws Exception {
         Map<String, Object> requestBody = new LinkedHashMap<String, Object>();
         requestBody.put("request_id", generateRequestId());
         requestBody.put("request_time", formatDateTime());
         requestBody.put("master_merchant_code", Config.get("master_merchant_code"));
         requestBody.put("sub_merchant_code", Config.get("sub_merchant_code"));
-        requestBody.put("mrc_order_id", orderData.get("mrcOrderId"));
-        requestBody.put("total_amount", orderData.get("totalAmount"));
-        requestBody.put("description", orderData.get("description"));
-        requestBody.put("url_success", orderData.containsKey("urlSuccess") ? orderData.get("urlSuccess") : Config.get("url_success"));
-        requestBody.put("url_fail", orderData.containsKey("urlFail") ? orderData.get("urlFail") : Config.get("url_fail"));
+        requestBody.put("mrc_order_id", request.getMrcOrderId());
+        requestBody.put("total_amount", request.getTotalAmount());
+        requestBody.put("description", request.getDescription());
+        requestBody.put("url_success", request.getUrlSuccess() != null ? request.getUrlSuccess() : Config.get("url_success"));
+        requestBody.put("url_fail", request.getUrlFail() != null ? request.getUrlFail() : Config.get("url_fail"));
         
-        if (orderData.containsKey("paymentMethod")) {
-            requestBody.put("payment_method", orderData.get("paymentMethod"));
+        if (request.getPaymentMethod() != null) {
+            requestBody.put("payment_method", request.getPaymentMethod());
         }
-        if (orderData.containsKey("items")) {
-            requestBody.put("items", orderData.get("items"));
+        if (request.getItems() != null) {
+            requestBody.put("items", request.getItems());
         }
-        if (orderData.containsKey("customerInfo")) {
-            requestBody.put("customer_info", orderData.get("customerInfo"));
+        if (request.getCustomerInfo() != null) {
+            requestBody.put("customer_info", request.getCustomerInfo());
         }
-        if (orderData.containsKey("serviceCode")) {
-            requestBody.put("service_code", orderData.get("serviceCode"));
+        if (request.getServiceCode() != null) {
+            requestBody.put("service_code", request.getServiceCode());
         }
-        if (orderData.containsKey("saveToken")) {
-            requestBody.put("save_token", orderData.get("saveToken"));
+        if (request.getSaveToken() != null) {
+            requestBody.put("save_token", request.getSaveToken());
         }
         
         return sendRequest(ENDPOINT_CREATE_ORDER, requestBody);
@@ -79,16 +83,18 @@ public class BaokimOrder {
     
     /**
      * Hoàn tiền
+     * 
+     * @param request DTO chứa thông tin hoàn tiền
      */
-    public ApiResponse refundOrder(String mrcOrderId, int amount, String description) throws Exception {
+    public ApiResponse refundOrder(RefundRequest request) throws Exception {
         Map<String, Object> requestBody = new LinkedHashMap<String, Object>();
         requestBody.put("request_id", generateRequestId());
         requestBody.put("request_time", formatDateTime());
         requestBody.put("master_merchant_code", Config.get("master_merchant_code"));
         requestBody.put("sub_merchant_code", Config.get("sub_merchant_code"));
-        requestBody.put("mrc_order_id", mrcOrderId);
-        requestBody.put("amount", amount);
-        requestBody.put("description", description);
+        requestBody.put("mrc_order_id", request.getMrcOrderId());
+        requestBody.put("amount", request.getAmount());
+        requestBody.put("description", request.getDescription());
         
         return sendRequest(ENDPOINT_REFUND_ORDER, requestBody);
     }
@@ -141,16 +147,6 @@ public class BaokimOrder {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         sdf.setTimeZone(TimeZone.getTimeZone("Asia/Ho_Chi_Minh"));
         return sdf.format(new Date());
-    }
-    
-    public static Map<String, Object> buildCustomerInfo(String name, String email, String phone, String address) {
-        Map<String, Object> info = new HashMap<String, Object>();
-        info.put("name", name);
-        info.put("email", email);
-        info.put("phone", phone);
-        info.put("address", address);
-        info.put("gender", 1);
-        return info;
     }
     
     /**

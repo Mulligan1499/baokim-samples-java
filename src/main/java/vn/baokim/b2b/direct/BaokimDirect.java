@@ -3,6 +3,8 @@ package vn.baokim.b2b.direct;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import vn.baokim.b2b.*;
+import vn.baokim.b2b.dto.DirectCreateOrderRequest;
+import vn.baokim.b2b.dto.CustomerInfo;
 import vn.baokim.b2b.mastersub.BaokimOrder;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -34,55 +36,58 @@ public class BaokimDirect {
     
     /**
      * Tạo đơn hàng Direct
+     * 
+     * @param request DTO chứa thông tin đơn hàng
      */
-    public BaokimOrder.ApiResponse createOrder(Map<String, Object> orderData) throws Exception {
+    public BaokimOrder.ApiResponse createOrder(DirectCreateOrderRequest request) throws Exception {
         // Validate required fields
-        String[] requiredFields = {"mrc_order_id", "total_amount", "description"};
-        for (String field : requiredFields) {
-            if (!orderData.containsKey(field) || orderData.get(field) == null) {
-                throw new Exception("Missing required field: " + field);
-            }
+        if (request.getMrcOrderId() == null || request.getMrcOrderId().isEmpty()) {
+            throw new Exception("Missing required field: mrc_order_id");
+        }
+        if (request.getDescription() == null || request.getDescription().isEmpty()) {
+            throw new Exception("Missing required field: description");
         }
         
-        // Chuẩn bị request body - CHỈ required fields
+        // Chuẩn bị request body
         Map<String, Object> requestBody = new LinkedHashMap<String, Object>();
         requestBody.put("request_id", String.valueOf(System.currentTimeMillis()) + new Random().nextInt(1000));
         requestBody.put("request_time", formatDateTime());
         requestBody.put("merchant_code", Config.get("direct_merchant_code", Config.get("merchant_code")));
-        requestBody.put("mrc_order_id", orderData.get("mrc_order_id"));
-        requestBody.put("description", orderData.get("description"));
-        requestBody.put("total_amount", ((Number)orderData.get("total_amount")).intValue());
-        requestBody.put("url_success", orderData.getOrDefault("url_success", Config.get("url_success")));
-        requestBody.put("url_fail", orderData.getOrDefault("url_fail", Config.get("url_fail")));
+        requestBody.put("mrc_order_id", request.getMrcOrderId());
+        requestBody.put("description", request.getDescription());
+        requestBody.put("total_amount", request.getTotalAmount());
+        requestBody.put("url_success", request.getUrlSuccess() != null ? request.getUrlSuccess() : Config.get("url_success"));
+        requestBody.put("url_fail", request.getUrlFail() != null ? request.getUrlFail() : Config.get("url_fail"));
         
         // Thêm optional fields CHỈ KHI có giá trị (không empty)
         // QUAN TRỌNG: Empty strings gây lỗi signature!
-        addIfNotEmpty(requestBody, "store_code", orderData.get("store_code"));
-        addIfNotEmpty(requestBody, "branch_code", orderData.get("branch_code"));
-        addIfNotEmpty(requestBody, "staff_code", orderData.get("staff_code"));
+        addIfNotEmpty(requestBody, "store_code", request.getStoreCode());
+        addIfNotEmpty(requestBody, "branch_code", request.getBranchCode());
+        addIfNotEmpty(requestBody, "staff_code", request.getStaffCode());
         
         // Items
-        if (orderData.containsKey("items")) {
-            requestBody.put("items", orderData.get("items"));
+        if (request.getItems() != null) {
+            requestBody.put("items", request.getItems());
         }
         
         // Customer info
-        @SuppressWarnings("unchecked")
-        Map<String, Object> customerInfo = (Map<String, Object>) orderData.getOrDefault("customer_info", new HashMap<String, Object>());
-        Map<String, Object> customer = new LinkedHashMap<String, Object>();
-        customer.put("name", customerInfo.getOrDefault("name", "NGUYEN VAN A"));
-        customer.put("email", customerInfo.getOrDefault("email", "test@example.com"));
-        customer.put("phone", customerInfo.getOrDefault("phone", "0901234567"));
-        customer.put("address", customerInfo.getOrDefault("address", "123 Test"));
-        customer.put("gender", customerInfo.getOrDefault("gender", 1));
-        if (customerInfo.containsKey("code")) {
-            customer.put("code", customerInfo.get("code"));
+        CustomerInfo custInfo = request.getCustomerInfo();
+        if (custInfo != null) {
+            Map<String, Object> customer = new LinkedHashMap<String, Object>();
+            customer.put("name", custInfo.getName() != null ? custInfo.getName() : "NGUYEN VAN A");
+            customer.put("email", custInfo.getEmail() != null ? custInfo.getEmail() : "test@example.com");
+            customer.put("phone", custInfo.getPhone() != null ? custInfo.getPhone() : "0901234567");
+            customer.put("address", custInfo.getAddress() != null ? custInfo.getAddress() : "123 Test");
+            customer.put("gender", custInfo.getGender() != null ? custInfo.getGender() : 1);
+            if (custInfo.getCode() != null) {
+                customer.put("code", custInfo.getCode());
+            }
+            requestBody.put("customer_info", customer);
         }
-        requestBody.put("customer_info", customer);
         
         // Payment method
-        if (orderData.containsKey("payment_method")) {
-            requestBody.put("payment_method", String.valueOf(orderData.get("payment_method")));
+        if (request.getPaymentMethod() != null) {
+            requestBody.put("payment_method", request.getPaymentMethod());
         }
         
         return sendRequest(ENDPOINT_CREATE_ORDER, requestBody);

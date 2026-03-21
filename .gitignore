@@ -25,5 +25,8 @@ hs_err_pid*
 logs/
 *.log
 
+# Config chứa secret (không push lên git)
+src/main/resources/config/config.properties
+
 # OS
 .DS_Store

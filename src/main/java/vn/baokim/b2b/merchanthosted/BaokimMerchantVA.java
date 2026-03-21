@@ -5,11 +5,13 @@ import com.google.gson.JsonObject;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import vn.baokim.b2b.*;
+import vn.baokim.b2b.dto.MerchantVARequest;
+import vn.baokim.b2b.dto.MerchantVAUpdateRequest;
+import vn.baokim.b2b.dto.VADetailRequest;
 import vn.baokim.b2b.mastersub.BaokimOrder;
 
 /**
  * BaokimMerchantVA - API Virtual Account (Merchant Hosted / Direct Connection)
- * 
  * 
  * Endpoints:
  * - Tạo VA: POST /b2b/core/api/merchant-hosted/bank-transfer/create
@@ -37,25 +39,19 @@ public class BaokimMerchantVA {
     /**
      * Tạo Dynamic VA (Merchant Hosted)
      * 
-     * @param accName    Tên chủ tài khoản VA
-     * @param mrcOrderId Mã đơn hàng (max 25 ký tự)
-     * @param amount     Số tiền cần thu (tối thiểu 2000)
-     * @param memo       Ghi chú (optional, max 255 ký tự)
+     * @param request DTO chứa thông tin VA (accType sẽ tự động set = DYNAMIC)
      */
-    public BaokimOrder.ApiResponse createDynamicVA(String accName, String mrcOrderId, int amount, String memo)
-            throws Exception {
+    public BaokimOrder.ApiResponse createDynamicVA(MerchantVARequest request) throws Exception {
         Map<String, Object> requestBody = new LinkedHashMap<String, Object>();
         requestBody.put("request_id", generateRequestId("MH_VA"));
         requestBody.put("request_time", formatDateTime());
         requestBody.put("merchant_code", getMerchantCode());
-        requestBody.put("acc_name", accName);
+        requestBody.put("acc_name", request.getAccName());
         requestBody.put("acc_type", VA_TYPE_DYNAMIC);
-        requestBody.put("mrc_order_id", mrcOrderId);
-        requestBody.put("collect_amount_min", amount);
-        requestBody.put("collect_amount_max", amount);
-        if (memo != null && !memo.isEmpty()) {
-            requestBody.put("memo", memo);
-        }
+        requestBody.put("mrc_order_id", request.getMrcOrderId());
+        requestBody.put("collect_amount_min", request.getCollectAmountMin());
+        requestBody.put("collect_amount_max", request.getCollectAmountMax());
+        addIfNotEmpty(requestBody, "memo", request.getMemo());
 
         return sendRequest(ENDPOINT_CREATE_VA, requestBody);
     }
@@ -63,24 +59,19 @@ public class BaokimMerchantVA {
     /**
      * Tạo Static VA (Merchant Hosted)
      * 
-     * @param accName          Tên chủ tài khoản VA
-     * @param mrcOrderId       Mã đơn hàng
-     * @param expireDate       Ngày hết hạn (yyyy-MM-dd HH:mm:ss)
-     * @param collectAmountMax Số tiền thu tối đa (required, tối thiểu 2000)
-     * @param collectAmountMin Số tiền thu tối thiểu (optional, tối thiểu 2000)
+     * @param request DTO chứa thông tin VA (accType sẽ tự động set = STATIC)
      */
-    public BaokimOrder.ApiResponse createStaticVA(String accName, String mrcOrderId, String expireDate,
-            int collectAmountMax, int collectAmountMin) throws Exception {
+    public BaokimOrder.ApiResponse createStaticVA(MerchantVARequest request) throws Exception {
         Map<String, Object> requestBody = new LinkedHashMap<String, Object>();
         requestBody.put("request_id", generateRequestId("MH_VA"));
         requestBody.put("request_time", formatDateTime());
         requestBody.put("merchant_code", getMerchantCode());
-        requestBody.put("acc_name", accName);
+        requestBody.put("acc_name", request.getAccName());
         requestBody.put("acc_type", VA_TYPE_STATIC);
-        requestBody.put("mrc_order_id", mrcOrderId);
-        requestBody.put("expire_date", expireDate);
-        requestBody.put("collect_amount_min", collectAmountMin);
-        requestBody.put("collect_amount_max", collectAmountMax);
+        requestBody.put("mrc_order_id", request.getMrcOrderId());
+        requestBody.put("expire_date", request.getExpireDate());
+        requestBody.put("collect_amount_min", request.getCollectAmountMin());
+        requestBody.put("collect_amount_max", request.getCollectAmountMax());
 
         return sendRequest(ENDPOINT_CREATE_VA, requestBody);
     }
@@ -88,29 +79,25 @@ public class BaokimMerchantVA {
     /**
      * Tạo VA với đầy đủ tham số (Merchant Hosted)
      * 
-     * @param vaData Map chứa thông tin VA:
-     *               - acc_name (required), acc_type (required), mrc_order_id
-     *               (required), collect_amount_max (required)
-     *               - collect_amount_min, store_code, staff_code, bank_code,
-     *               expire_date, memo (optional)
+     * @param request DTO chứa thông tin VA bao gồm cả optional fields
      */
-    public BaokimOrder.ApiResponse createVA(Map<String, Object> vaData) throws Exception {
+    public BaokimOrder.ApiResponse createVA(MerchantVARequest request) throws Exception {
         Map<String, Object> requestBody = new LinkedHashMap<String, Object>();
         requestBody.put("request_id", generateRequestId("MH_VA"));
         requestBody.put("request_time", formatDateTime());
         requestBody.put("merchant_code", getMerchantCode());
-        requestBody.put("acc_name", vaData.get("acc_name"));
-        requestBody.put("acc_type", vaData.get("acc_type"));
-        requestBody.put("mrc_order_id", vaData.get("mrc_order_id"));
-        requestBody.put("collect_amount_max", vaData.get("collect_amount_max"));
+        requestBody.put("acc_name", request.getAccName());
+        requestBody.put("acc_type", request.getAccType());
+        requestBody.put("mrc_order_id", request.getMrcOrderId());
+        requestBody.put("collect_amount_max", request.getCollectAmountMax());
 
         // Optional fields
-        addIfNotNull(requestBody, "collect_amount_min", vaData.get("collect_amount_min"));
-        addIfNotEmpty(requestBody, "store_code", vaData.get("store_code"));
-        addIfNotEmpty(requestBody, "staff_code", vaData.get("staff_code"));
-        addIfNotEmpty(requestBody, "bank_code", vaData.get("bank_code"));
-        addIfNotEmpty(requestBody, "expire_date", vaData.get("expire_date"));
-        addIfNotEmpty(requestBody, "memo", vaData.get("memo"));
+        addIfNotNull(requestBody, "collect_amount_min", request.getCollectAmountMin());
+        addIfNotEmpty(requestBody, "store_code", request.getStoreCode());
+        addIfNotEmpty(requestBody, "staff_code", request.getStaffCode());
+        addIfNotEmpty(requestBody, "bank_code", request.getBankCode());
+        addIfNotEmpty(requestBody, "expire_date", request.getExpireDate());
+        addIfNotEmpty(requestBody, "memo", request.getMemo());
 
         return sendRequest(ENDPOINT_CREATE_VA, requestBody);
     }
@@ -118,22 +105,20 @@ public class BaokimMerchantVA {
     /**
      * Cập nhật VA (Merchant Hosted)
      * 
-     * @param mrcOrderId Mã đơn hàng (required)
-     * @param updateData Dữ liệu cập nhật: acc_name, collect_amount_min,
-     *                   collect_amount_max, expire_date
+     * @param request DTO chứa thông tin cập nhật VA
      */
-    public BaokimOrder.ApiResponse updateVA(String mrcOrderId, Map<String, Object> updateData) throws Exception {
+    public BaokimOrder.ApiResponse updateVA(MerchantVAUpdateRequest request) throws Exception {
         Map<String, Object> requestBody = new LinkedHashMap<String, Object>();
         requestBody.put("request_id", generateRequestId("MH_VA_UPD"));
         requestBody.put("request_time", formatDateTime());
         requestBody.put("merchant_code", getMerchantCode());
-        requestBody.put("mrc_order_id", mrcOrderId);
+        requestBody.put("mrc_order_id", request.getMrcOrderId());
 
         // Optional update fields
-        addIfNotEmpty(requestBody, "acc_name", updateData.get("acc_name"));
-        addIfNotNull(requestBody, "collect_amount_min", updateData.get("collect_amount_min"));
-        addIfNotNull(requestBody, "collect_amount_max", updateData.get("collect_amount_max"));
-        addIfNotEmpty(requestBody, "expire_date", updateData.get("expire_date"));
+        addIfNotEmpty(requestBody, "acc_name", request.getAccName());
+        addIfNotNull(requestBody, "collect_amount_min", request.getCollectAmountMin());
+        addIfNotNull(requestBody, "collect_amount_max", request.getCollectAmountMax());
+        addIfNotEmpty(requestBody, "expire_date", request.getExpireDate());
 
         return sendRequest(ENDPOINT_UPDATE_VA, requestBody);
     }
@@ -144,29 +129,26 @@ public class BaokimMerchantVA {
      * @param accNo Số VA cần tra cứu (required)
      */
     public BaokimOrder.ApiResponse detailVA(String accNo) throws Exception {
-        return detailVA(accNo, null);
+        VADetailRequest request = new VADetailRequest(accNo);
+        return detailVA(request);
     }
 
     /**
      * Tra cứu chi tiết VA với bộ lọc (Merchant Hosted)
      * 
-     * @param accNo     Số VA cần tra cứu (required)
-     * @param queryData Map bổ sung: start_date, end_date, current_page, per_page
-     *                  (all optional)
+     * @param request DTO chứa thông tin tra cứu
      */
-    public BaokimOrder.ApiResponse detailVA(String accNo, Map<String, Object> queryData) throws Exception {
+    public BaokimOrder.ApiResponse detailVA(VADetailRequest request) throws Exception {
         Map<String, Object> requestBody = new LinkedHashMap<String, Object>();
         requestBody.put("request_id", generateRequestId("MH_VA_DTL"));
         requestBody.put("request_time", formatDateTime());
         requestBody.put("merchant_code", getMerchantCode());
-        requestBody.put("acc_no", accNo);
+        requestBody.put("acc_no", request.getAccNo());
 
-        if (queryData != null) {
-            addIfNotEmpty(requestBody, "start_date", queryData.get("start_date"));
-            addIfNotEmpty(requestBody, "end_date", queryData.get("end_date"));
-            addIfNotNull(requestBody, "current_page", queryData.get("current_page"));
-            addIfNotNull(requestBody, "per_page", queryData.get("per_page"));
-        }
+        addIfNotEmpty(requestBody, "start_date", request.getStartDate());
+        addIfNotEmpty(requestBody, "end_date", request.getEndDate());
+        addIfNotNull(requestBody, "current_page", request.getCurrentPage());
+        addIfNotNull(requestBody, "per_page", request.getPerPage());
 
         return sendRequest(ENDPOINT_DETAIL_VA, requestBody);
     }

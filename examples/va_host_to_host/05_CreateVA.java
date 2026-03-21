@@ -5,6 +5,9 @@
  */
 
 import vn.baokim.b2b.*;
+import vn.baokim.b2b.dto.*;
+import vn.baokim.b2b.hosttohost.BaokimVA;
+import vn.baokim.b2b.mastersub.BaokimOrder;
 
 public class CreateVA {
     
@@ -23,9 +26,14 @@ public class CreateVA {
             System.out.println("Mã đơn hàng: " + mrcOrderId);
             System.out.println("Số tiền: " + String.format("%,d", amount) + " VND\n");
             
-            BaokimOrder.ApiResponse result = vaService.createDynamicVA(
-                "NGUYEN VAN A", mrcOrderId, amount, "Thanh toan " + mrcOrderId
-            );
+            CreateVARequest request = new CreateVARequest();
+            request.setAccName("NGUYEN VAN A");
+            request.setMrcOrderId(mrcOrderId);
+            request.setCollectAmountMin(amount);
+            request.setCollectAmountMax(amount);
+            request.setDescription("Thanh toan " + mrcOrderId);
+            
+            BaokimOrder.ApiResponse result = vaService.createDynamicVA(request);
             
             System.out.println("Success: " + result.success);
             System.out.println("Code: " + result.code);

@@ -6,7 +6,8 @@
  */
 
 import vn.baokim.b2b.*;
-import java.util.*;
+import vn.baokim.b2b.dto.*;
+import vn.baokim.b2b.mastersub.BaokimOrder;
 
 public class CreateOrder {
     
@@ -25,15 +26,13 @@ public class CreateOrder {
             System.out.println("Mã đơn hàng: " + mrcOrderId);
             System.out.println("Tổng tiền: " + String.format("%,d", amount) + " VND\n");
             
-            Map<String, Object> orderData = new HashMap<String, Object>();
-            orderData.put("mrcOrderId", mrcOrderId);
-            orderData.put("totalAmount", amount);
-            orderData.put("description", "Thanh toan don hang " + mrcOrderId);
-            orderData.put("customerInfo", BaokimOrder.buildCustomerInfo(
-                "Nguyen Van A", "test@email.com", "0901234567", "123 Street"
-            ));
+            CreateOrderRequest request = new CreateOrderRequest();
+            request.setMrcOrderId(mrcOrderId);
+            request.setTotalAmount(amount);
+            request.setDescription("Thanh toan don hang " + mrcOrderId);
+            request.setCustomerInfo(new CustomerInfo("Nguyen Van A", "test@email.com", "0901234567", "123 Street"));
             
-            BaokimOrder.ApiResponse result = orderService.createOrder(orderData);
+            BaokimOrder.ApiResponse result = orderService.createOrder(request);
             
             System.out.println("Success: " + result.success);
             System.out.println("Code: " + result.code);

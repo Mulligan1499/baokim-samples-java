@@ -1,0 +1,32 @@
+# Baokim B2B API Configuration
+# Điền các thông tin được Baokim cung cấp vào bên dưới
+# Copy file này thành config.properties và điền giá trị thực
+ 
+# Base URL
+# - Dev/Test: https://devtest.baokim.vn
+# - Production: https://openapi.baokim.vn
+base_url=https://devtest.baokim.vn
+timeout=30000
+
+# Merchant credentials
+merchant_code=
+client_id=
+client_secret=
+
+# Master/Sub Merchant
+master_merchant_code=
+sub_merchant_code=
+
+# Direct Connection credentials (không qua Master Merchant)
+direct_merchant_code=
+direct_client_id=
+direct_client_secret=
+
+# RSA Key paths (tương đối từ thư mục gốc project)
+merchant_private_key_path=src/main/resources/keys/merchant_private.pem
+baokim_public_key_path=src/main/resources/keys/baokim_public.pem
+
+# Callback URLs
+url_success=https://your-domain.com/payment/success
+url_fail=https://your-domain.com/payment/fail
+webhook_url=https://your-domain.com/webhook/baokim

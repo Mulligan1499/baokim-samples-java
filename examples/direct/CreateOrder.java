@@ -1,8 +1,9 @@
 package examples.direct;
 
 import vn.baokim.b2b.*;
+import vn.baokim.b2b.dto.*;
 import vn.baokim.b2b.direct.BaokimDirect;
-import java.util.*;
+import vn.baokim.b2b.mastersub.BaokimOrder;
 
 /**
  * Example: Tạo đơn hàng Direct Connection
@@ -18,20 +19,13 @@ public class CreateOrder {
             
             String mrcOrderId = "DRT_" + System.currentTimeMillis();
             
-            Map<String, Object> orderData = new HashMap<String, Object>();
-            orderData.put("mrc_order_id", mrcOrderId);
-            orderData.put("total_amount", 100000);
-            orderData.put("description", "Test Direct Order");
+            DirectCreateOrderRequest request = new DirectCreateOrderRequest();
+            request.setMrcOrderId(mrcOrderId);
+            request.setTotalAmount(100000);
+            request.setDescription("Test Direct Order");
+            request.setCustomerInfo(new CustomerInfo("NGUYEN VAN A", "test@example.com", "0901234567", "123 Test Street"));
             
-            Map<String, Object> customerInfo = new HashMap<String, Object>();
-            customerInfo.put("name", "NGUYEN VAN A");
-            customerInfo.put("email", "test@example.com");
-            customerInfo.put("phone", "0901234567");
-            customerInfo.put("address", "123 Test Street");
-            customerInfo.put("gender", 1);
-            orderData.put("customer_info", customerInfo);
-            
-            BaokimOrder.ApiResponse result = directService.createOrder(orderData);
+            BaokimOrder.ApiResponse result = directService.createOrder(request);
             
             if (result.success) {
                 System.out.println("✅ Tạo đơn Direct thành công!");
